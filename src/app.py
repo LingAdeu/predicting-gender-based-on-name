@@ -4,13 +4,13 @@ import pandas as pd
 import re
 from sklearn.base import BaseEstimator, TransformerMixin
 from lime.lime_text import LimeTextExplainer
-import matplotlib.pyplot as plt
+import streamlit.components.v1 as components
 
-# set page title
+# Set page title
 st.set_page_config(page_title='Gender Prediction Model')
 
-# create TextCleaner class (copy-pasting from report.ipynb)
-class TextCleaner(BaseEstimator, TransformerMixin):
+# Create TextCleaner class
+class RemovePunctuation(BaseEstimator, TransformerMixin):
     def __init__(self):
         pass
 
@@ -36,31 +36,32 @@ class TextCleaner(BaseEstimator, TransformerMixin):
         text = re.sub(r'\s+', ' ', text).strip()
         return text
 
-# load model
-model = joblib.load('model/final_model.pkl')
+# Load model
+path = '../model/final_model.pkl'
+model = joblib.load(path)
 
-# create function to predict
+# Create function to predict
 def predict(input_text):
-    cleaner = TextCleaner()
-    cleaned_text = cleaner.transform(input_text)  
+    cleaner = RemovePunctuation()
+    cleaned_text = cleaner.transform(input_text)
     data = pd.Series([cleaned_text])
     prediction = model.predict(data)
     probability = model.predict_proba(data)
     return prediction, probability, cleaned_text
 
-# create function to generate explanation
+# Create function to generate explanation
 def lime_explanation(text, seed=42):
     explainer = LimeTextExplainer(class_names=['Female', 'Male'], random_state=seed)
     exp = explainer.explain_instance(text, model.predict_proba, num_features=10)
     return exp
 
-# build app
+# Build app
 def main():
     st.markdown("<h1 style='text-align: left; color: black;'>Name-Based Gender Prediction Model</h1>", 
                 unsafe_allow_html=True)
     st.write("This model predicts someone's gender based on their full name")
 
-    text = st.text_area("Enter a SINGLE full name here:")
+    text = st.text_area("Enter a **SINGLE** full name here:")
 
     if st.button("Predict"):
         if not text:
@@ -68,43 +69,32 @@ def main():
         else:
             prediction, probability, cleaned_text = predict(text)
             
-            prob_spam = probability[0][1]
-            prob_not_spam = probability[0][0]
+            prob_male = probability[0][1]
+            prob_not_male = probability[0][0]
             
             if prediction[0] == 1:
-                st.markdown(f"There is a {prob_spam * 100:.2f}% chance this message is <span style='color:red;font-weight:bold'>SPAM</span>.", 
+                st.markdown(f"There is a {prob_male * 100:.2f}% chance the person is <span style='color:#ff7f0f ;font-weight:bold'>MALE</span>.", 
                             unsafe_allow_html=True)
             else:
-                st.markdown(f"There is a {prob_not_spam * 100:.2f}% chance this message is <span style='color:green;font-weight:bold'>NOT SPAM</span>.", 
+                st.markdown(f"There is a {prob_not_male * 100:.2f}% chance the person is <span style='color:#1f77b4 ;font-weight:bold'>FEMALE</span>.", 
                             unsafe_allow_html=True)
 
-            # separate sections
+            # Separate sections
             st.markdown("---")
             st.markdown("#### Explanation on the Prediction")
             st.markdown("""
-                The following plot helps us understand why the model made its prediction. 
-                It does this by changing parts of the message and seeing how it affects the result. 
-                The plot below shows the important words that influenced the model's decision to classify the message. 
+                The following explanation helps us understand why the model made its prediction. 
+                It shows the important name components that influenced the model's decision. 
 
-                - <span style='color:red;font-weight:bold'>Red bar</span> means the word makes it more likely to be spam.
-                - <span style='color:green;font-weight:bold'>Green bar</span> means the word makes it less likely to be spam.
+                - <span style='color:#ff7f0f ;font-weight:bold'>Orange</span> means the name makes it more likely to be <b>MALE</b>.
+                - <span style='color:#1f77b4 ;font-weight:bold'>Blue</span> means the name makes it more likely to be <b>FEMALE</b>.
                 """, 
                 unsafe_allow_html=True)
 
-            # generate and display explanation
+            # Generate and display explanation as HTML
             exp = lime_explanation(cleaned_text)
-            fig, ax = plt.subplots()
-            exp_list = exp.as_list()
-            feature_names, scores = zip(*exp_list)
-            colors = ['green' if score < 0 else 'red' for score in scores]
-            bars = ax.barh(range(len(scores)), scores, align='center', color=colors)
-            ax.set_yticks(range(len(scores)))
-            ax.set_yticklabels(feature_names)
-            ax.invert_yaxis()  
-            ax.set_xlabel('Score')
-            ax.set_title('Word Influence Score')
-
-            st.pyplot(fig)
+            exp_html = exp.as_html()
+            components.html(exp_html, height=800)
 
     st.markdown("<h6 style='text-align: center; color: grey;'>Developed by LingAdeu</h6>", unsafe_allow_html=True)
 
