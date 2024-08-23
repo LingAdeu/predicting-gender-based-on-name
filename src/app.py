@@ -94,7 +94,7 @@ def main():
             prob_not_male = probability[0][0]
             
             if prediction[0] == 1:
-                st.markdown(f"There is a {prob_male * 100:.2f}% chance the person is <span style='color:#ff7f0f ;font-weight:bold'>MALE</span>.", 
+                st.markdown(f"There is a {prob_male * 100:.2f}% chance the person is <span style='color:#ff7f0f;font-weight:bold'>MALE</span>.", 
                             unsafe_allow_html=True)
             else:
                 st.markdown(f"There is a {prob_not_male * 100:.2f}% chance the person is <span style='color:#1f77b4 ;font-weight:bold'>FEMALE</span>.", 
@@ -121,14 +121,14 @@ def main():
             st.markdown("##### **Is the prediction correct?**")
             col1, col2, col3 = st.columns([1, 0.001, 10])  
             with col1:
-                if st.button("Yes"):
+                if st.button("Yes", on_click="Alright. Thanks!"):
                     save_user_activity(text, probability, "Yes")
                     st.success("Your feedback has been saved!")
             with col2:
                 st.write("") # empty column to reduce the gap
             with col3:
                 if st.button("No"):
-                    save_user_activity(text, probability, "No")
+                    save_user_activity(text, probability)
                     st.success("Your feedback has been saved!")
 
     st.markdown("<h6 style='text-align: center; color: grey;'>Developed by LingAdeu</h6>", unsafe_allow_html=True)
