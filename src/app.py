@@ -5,6 +5,7 @@ import re
 from sklearn.base import BaseEstimator, TransformerMixin
 from lime.lime_text import LimeTextExplainer
 import streamlit.components.v1 as components
+import os
 
 # Set page title
 st.set_page_config(page_title='Gender Prediction Model')
@@ -37,10 +38,17 @@ class RemovePunctuation(BaseEstimator, TransformerMixin):
         return text
 
 # Load model
-path = '../model/final_model.pkl'
-model = joblib.load(path)
+path = '/Users/adeliajanuarto/Documents/DirectoryPython/PORTFOLIO-PROJECT/05_NLP/model/final_model.pkl'
+try:
+    model = joblib.load(path)
+except Exception as e:
+    st.error(f"Failed to load the model. Error: {e}")
+    st.stop()
 
-# Create function to predict
+# lime explainer initialization
+explainer = LimeTextExplainer(class_names=['Female', 'Male'], random_state=42)
+
+# create function to predict
 def predict(input_text):
     cleaner = RemovePunctuation()
     cleaned_text = cleaner.transform(input_text)
@@ -49,19 +57,32 @@ def predict(input_text):
     probability = model.predict_proba(data)
     return prediction, probability, cleaned_text
 
-# Create function to generate explanation
+# create function to generate explanation
 def lime_explanation(text, seed=42):
     explainer = LimeTextExplainer(class_names=['Female', 'Male'], random_state=seed)
     exp = explainer.explain_instance(text, model.predict_proba, num_features=10)
     return exp
 
+# save user activity
+def save_user_activity(input_text, probability, correct):
+    activity = {
+        'Input': input_text,
+        'Probability_Male': probability[0][1],
+        'Probability_Female': probability[0][0],
+        'Correct': correct
+    }
+    df = pd.DataFrame([activity])
+    # Check if file exists to write the header only once
+    file_exists = os.path.isfile('user_activity.csv')
+    df.to_csv('user_activity.csv', mode='a', header=not file_exists, index=False)
+
 # Build app
 def main():
-    st.markdown("<h1 style='text-align: left; color: black;'>Name-Based Gender Prediction Model</h1>", 
+    st.markdown("<h1 style='text-align: left; color: black;'>Gender Guessing Model</h1>", 
                 unsafe_allow_html=True)
-    st.write("This model predicts someone's gender based on their full name")
+    st.write("This machine learning model predicts someone's gender based on their full name")
 
-    text = st.text_area("Enter a **SINGLE** full name here:")
+    text = st.text_area("Enter a SINGLE full name here:")
 
     if st.button("Predict"):
         if not text:
@@ -73,13 +94,13 @@ def main():
             prob_not_male = probability[0][0]
             
             if prediction[0] == 1:
-                st.markdown(f"There is a {prob_male * 100:.2f}% chance the person is <span style='color:#ff7f0f ;font-weight:bold'>MALE</span>.", 
+                st.markdown(f"There is a {prob_male * 100:.2f}% chance the person is <span style='color:#2986cc;font-weight:bold'>MALE</span>.", 
                             unsafe_allow_html=True)
             else:
-                st.markdown(f"There is a {prob_not_male * 100:.2f}% chance the person is <span style='color:#1f77b4 ;font-weight:bold'>FEMALE</span>.", 
+                st.markdown(f"There is a {prob_not_male * 100:.2f}% chance the person is <span style='color:#c90076;font-weight:bold'>FEMALE</span>.", 
                             unsafe_allow_html=True)
 
-            # Separate sections
+            # separate sections
             st.markdown("---")
             st.markdown("#### Explanation on the Prediction")
             st.markdown("""
@@ -91,10 +112,24 @@ def main():
                 """, 
                 unsafe_allow_html=True)
 
-            # Generate and display explanation as HTML
+            # generate and display explanation as HTML
             exp = lime_explanation(cleaned_text)
             exp_html = exp.as_html()
-            components.html(exp_html, height=800)
+            components.html(exp_html, height=200)
+            
+            # ask for confirmation after the explanation
+            st.markdown("##### **Is the prediction correct?**")
+            col1, col2, col3 = st.columns([1, 0.001, 10])  
+            with col1:
+                if st.button("Yes"):
+                    save_user_activity(text, probability, "Yes")
+                    st.success("Your feedback has been saved!")
+            with col2:
+                st.write("") # empty column to reduce the gap
+            with col3:
+                if st.button("No"):
+                    save_user_activity(text, probability, "No")
+                    st.success("Your feedback has been saved!")
 
     st.markdown("<h6 style='text-align: center; color: grey;'>Developed by LingAdeu</h6>", unsafe_allow_html=True)
 
