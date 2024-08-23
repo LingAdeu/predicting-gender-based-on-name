@@ -38,7 +38,7 @@ class RemovePunctuation(BaseEstimator, TransformerMixin):
         return text
 
 # Load model
-path = '/Users/adeliajanuarto/Documents/DirectoryPython/PORTFOLIO-PROJECT/05_NLP/model/final_model.pkl'
+path = '../model/final_model.pkl'
 try:
     model = joblib.load(path)
 except Exception as e:
