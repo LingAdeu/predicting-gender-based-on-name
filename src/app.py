@@ -94,10 +94,10 @@ def main():
             prob_not_male = probability[0][0]
             
             if prediction[0] == 1:
-                st.markdown(f"There is a {prob_male * 100:.2f}% chance the person is <span style='color:#2986cc;font-weight:bold'>MALE</span>.", 
+                st.markdown(f"There is a {prob_male * 100:.2f}% chance the person is <span style='color:#ff7f0f ;font-weight:bold'>MALE</span>.", 
                             unsafe_allow_html=True)
             else:
-                st.markdown(f"There is a {prob_not_male * 100:.2f}% chance the person is <span style='color:#c90076;font-weight:bold'>FEMALE</span>.", 
+                st.markdown(f"There is a {prob_not_male * 100:.2f}% chance the person is <span style='color:#1f77b4 ;font-weight:bold'>FEMALE</span>.", 
                             unsafe_allow_html=True)
 
             # separate sections
