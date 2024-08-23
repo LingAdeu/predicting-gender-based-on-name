@@ -121,7 +121,7 @@ def main():
             st.markdown("##### **Is the prediction correct?**")
             col1, col2, col3 = st.columns([1, 0.001, 10])  
             with col1:
-                if st.button("Yes", on_click="Alright. Thanks!"):
+                if st.button("Yes"):
                     save_user_activity(text, probability, "Yes")
                     st.success("Your feedback has been saved!")
             with col2:
